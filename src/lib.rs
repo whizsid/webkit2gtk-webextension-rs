@@ -15,6 +15,7 @@ pub extern crate glib_sys;
 extern crate gobject_sys;
 extern crate gtk;
 extern crate libc;
+extern crate soup;
 
 pub extern crate webkit2gtk_webextension_sys as webkit2_webextension_sys;
 

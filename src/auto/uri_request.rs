@@ -9,6 +9,7 @@ use glib::signal::SignalHandlerId;
 use glib::translate::*;
 use glib::GString;
 use glib_sys;
+use soup;
 use std::boxed::Box as Box_;
 use std::fmt;
 use std::mem::transmute;
@@ -26,9 +27,7 @@ impl URIRequest {
     pub fn new(uri: &str) -> URIRequest {
         assert_initialized_main_thread!();
         unsafe {
-            from_glib_full(webkit2_webextension_sys::webkit_uri_request_new(
-                uri.to_glib_none().0,
-            ))
+            from_glib_full(webkit2_webextension_sys::webkit_uri_request_new(uri.to_glib_none().0))
         }
     }
 }
@@ -36,7 +35,7 @@ impl URIRequest {
 pub const NONE_URI_REQUEST: Option<&URIRequest> = None;
 
 pub trait URIRequestExt: 'static {
-    //fn get_http_headers(&self) -> /*Ignored*/Option<soup::MessageHeaders>;
+    fn get_http_headers(&self) -> Option<soup::MessageHeaders>;
 
     #[cfg(any(feature = "v2_12", feature = "dox"))]
     fn get_http_method(&self) -> Option<GString>;
@@ -49,57 +48,42 @@ pub trait URIRequestExt: 'static {
 }
 
 impl<O: IsA<URIRequest>> URIRequestExt for O {
-    //fn get_http_headers(&self) -> /*Ignored*/Option<soup::MessageHeaders> {
-    //    unsafe { TODO: call webkit2_webextension_sys:webkit_uri_request_get_http_headers() }
-    //}
+    fn get_http_headers(&self) -> Option<soup::MessageHeaders> {
+        unsafe {
+            from_glib_none(webkit2_webextension_sys::webkit_uri_request_get_http_headers(self.as_ref().to_glib_none().0))
+        }
+    }
 
     #[cfg(any(feature = "v2_12", feature = "dox"))]
     fn get_http_method(&self) -> Option<GString> {
         unsafe {
-            from_glib_none(
-                webkit2_webextension_sys::webkit_uri_request_get_http_method(
-                    self.as_ref().to_glib_none().0,
-                ),
-            )
+            from_glib_none(webkit2_webextension_sys::webkit_uri_request_get_http_method(self.as_ref().to_glib_none().0))
         }
     }
 
     fn get_uri(&self) -> Option<GString> {
         unsafe {
-            from_glib_none(webkit2_webextension_sys::webkit_uri_request_get_uri(
-                self.as_ref().to_glib_none().0,
-            ))
+            from_glib_none(webkit2_webextension_sys::webkit_uri_request_get_uri(self.as_ref().to_glib_none().0))
         }
     }
 
     fn set_uri(&self, uri: &str) {
         unsafe {
-            webkit2_webextension_sys::webkit_uri_request_set_uri(
-                self.as_ref().to_glib_none().0,
-                uri.to_glib_none().0,
-            );
+            webkit2_webextension_sys::webkit_uri_request_set_uri(self.as_ref().to_glib_none().0, uri.to_glib_none().0);
         }
     }
 
     fn connect_property_uri_notify<F: Fn(&Self) + 'static>(&self, f: F) -> SignalHandlerId {
-        unsafe extern "C" fn notify_uri_trampoline<P, F: Fn(&P) + 'static>(
-            this: *mut webkit2_webextension_sys::WebKitURIRequest,
-            _param_spec: glib_sys::gpointer,
-            f: glib_sys::gpointer,
-        ) where
-            P: IsA<URIRequest>,
+        unsafe extern "C" fn notify_uri_trampoline<P, F: Fn(&P) + 'static>(this: *mut webkit2_webextension_sys::WebKitURIRequest, _param_spec: glib_sys::gpointer, f: glib_sys::gpointer)
+            where P: IsA<URIRequest>
         {
             let f: &F = &*(f as *const F);
             f(&URIRequest::from_glib_borrow(this).unsafe_cast())
         }
         unsafe {
             let f: Box_<F> = Box_::new(f);
-            connect_raw(
-                self.as_ptr() as *mut _,
-                b"notify::uri\0".as_ptr() as *const _,
-                Some(transmute(notify_uri_trampoline::<Self, F> as usize)),
-                Box_::into_raw(f),
-            )
+            connect_raw(self.as_ptr() as *mut _, b"notify::uri\0".as_ptr() as *const _,
+                Some(transmute(notify_uri_trampoline::<Self, F> as usize)), Box_::into_raw(f))
         }
     }
 }

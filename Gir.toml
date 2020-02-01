@@ -28,6 +28,7 @@ manual = [
     "GObject.Closure",
     "GLib.Error",
     "GLib.Variant",
+    "Soup.MessageHeaders"
 ]
 
 [[object]]
